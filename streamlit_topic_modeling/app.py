@@ -2,6 +2,7 @@ import random
 
 import gensim
 import matplotlib.pyplot as plt
+import nltk
 import pandas as pd
 import regex
 import seaborn as sns
@@ -12,6 +13,8 @@ from gensim.utils import simple_preprocess
 from nltk.corpus import stopwords
 from wordcloud import WordCloud
 import matplotlib.colors as mcolors
+
+nltk.download("stopwords")
 
 DATASETS = {
     'Five Years of Elon Musk Tweets': {
