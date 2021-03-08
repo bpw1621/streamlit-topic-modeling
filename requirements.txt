@@ -1,0 +1,12 @@
+wheel
+more-itertools
+pluggy
+regex
+requests
+tqdm
+nltk
+gensim
+matplotlib
+seaborn
+wordcloud
+streamlit
