@@ -51,7 +51,7 @@ MODELS = {
 
 COLORS = [color for color in mcolors.XKCD_COLORS.values()]
 
-WORDCLOUD_FONT_PATH = r'C:\Windows\Fonts\Inkfree.ttf'
+WORDCLOUD_FONT_PATH = r'./data/Inkfree.ttf'
 
 EMAIL_REGEX_STR = '\S*@\S*'
 MENTION_REGEX_STR = '@\S*'
