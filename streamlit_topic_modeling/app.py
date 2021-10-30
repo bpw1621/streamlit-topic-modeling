@@ -6,7 +6,7 @@ import nltk
 import pandas as pd
 import regex
 import seaborn as sns
-import spacy
+# import spacy
 import streamlit as st
 from gensim import corpora
 from gensim.utils import simple_preprocess
@@ -101,17 +101,18 @@ def generate_docs(texts_df: pd.DataFrame, text_column: str, ngrams: str = None):
     if ngrams == 'trigrams':
         docs = create_trigrams(docs)
 
-    lemmantized_docs = []
-    nlp = spacy.load('en_core_web_sm', disable=['parser', 'ner'])
-    for doc in docs:
-        doc = nlp(' '.join(doc))
-        # lemmantized_docs.append([token.lemma_ for token in doc if token.pos_ in ('NOUN', 'ADJ', 'VERB', 'ADV')])
-        lemmantized_docs.append([token.lemma_ for token in doc])
-
+    # lemmantized_docs = []
+    # nlp = spacy.load('en_core_web_sm', disable=['parser', 'ner'])
+    # for doc in docs:
+    #     doc = nlp(' '.join(doc))
+    #     # lemmantized_docs.append([token.lemma_ for token in doc if token.pos_ in ('NOUN', 'ADJ', 'VERB', 'ADV')])
+    #     lemmantized_docs.append([token.lemma_ for token in doc])
+    #
     # lemmantized_docs = [[w for w in simple_preprocess(str(doc)) if w not in stopwords.words('english')] for doc in
     #                     lemmantized_docs]
 
-    return lemmantized_docs
+    # return lemmantized_docs
+    return docs
 
 
 @st.cache()
@@ -166,7 +167,7 @@ if __name__ == '__main__':
 
     st.title('Topic Modeling')
     st.header('What is topic modeling?')
-    with st.beta_expander('Hero', expanded=True):
+    with st.expander('Hero', expanded=True):
         st.image('./data/is-this-a-topic-modeling.jpg', caption='No ... no it\'s not ...', use_column_width=True)
     st.markdown(
         'Topic modeling is a broad term. It encompasses a number of specific statistical learning methods. '
@@ -182,7 +183,7 @@ if __name__ == '__main__':
         'unsupervised although there are semi-supervised and supervised variants.'
     )
 
-    with st.beta_expander('Additional Details'):
+    with st.expander('Additional Details'):
         st.markdown('The objective can be viewed as a matrix factorization.')
         st.image('./data/mf.png', use_column_width=True)
         st.markdown('This factorization makes the methods much more efficient than directly characterizing documents '
@@ -193,7 +194,7 @@ if __name__ == '__main__':
     st.header('Datasets')
     st.markdown('Preloaded a couple of small example datasets to illustrate.')
     selected_dataset = st.selectbox('Dataset', sorted(list(DATASETS.keys())))
-    with st.beta_expander('Dataset Description', expanded=True):
+    with st.expander('Dataset Description', expanded=True):
         st.markdown(DATASETS[selected_dataset]['description'])
         st.markdown(DATASETS[selected_dataset]['url'])
 
@@ -201,17 +202,17 @@ if __name__ == '__main__':
     texts_df = generate_texts_df(selected_dataset)
     docs = generate_docs(texts_df, text_column, ngrams=ngrams)
 
-    with st.beta_expander('Sample Documents', expanded=True):
+    with st.expander('Sample Documents', expanded=True):
         sample_texts = texts_df[text_column].sample(5).values.tolist()
         for index, text in enumerate(sample_texts):
             st.markdown(f'**{index + 1}**: _{text}_')
 
-    with st.beta_expander('Frequency Sized Corpus Wordcloud', expanded=True):
+    with st.expander('Frequency Sized Corpus Wordcloud', expanded=True):
         wc = generate_wordcloud(docs)
         st.image(wc.to_image(), caption='Dataset Wordcloud (Not A Topic Model)', use_column_width=True)
         st.markdown('These are the remaining words after document preprocessing.')
 
-    with st.beta_expander('Document Word Count Distribution', expanded=True):
+    with st.expander('Document Word Count Distribution', expanded=True):
         len_docs = [len(doc) for doc in docs]
         fig, ax = plt.subplots()
         sns.histplot(pd.DataFrame(len_docs, columns=['Words In Document']), ax=ax)
