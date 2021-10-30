@@ -238,7 +238,7 @@ if __name__ == '__main__':
 
         st.subheader('Top N Topic Keywords Wordclouds')
         topics = model.show_topics(formatted=False, num_topics=num_topics)
-        cols = st.beta_columns(3)
+        cols = st.columns(3)
         colors = random.sample(COLORS, k=len(topics))
         for index, topic in enumerate(topics):
             wc = WordCloud(font_path=WORDCLOUD_FONT_PATH, width=700, height=600,
