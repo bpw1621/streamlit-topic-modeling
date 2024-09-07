@@ -1,25 +1,25 @@
 import random
 
 import gensim
+import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import nltk
 import numpy as np
 import pandas as pd
+import plotly.express as px
 import pyLDAvis.gensim_models
 import regex
 import seaborn as sns
 import streamlit as st
+import streamlit.components.v1 as components
 from gensim import corpora
 from gensim.models import CoherenceModel
 from gensim.utils import simple_preprocess
 from nltk.corpus import stopwords
-import streamlit.components.v1 as components
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from umap import UMAP
 from wordcloud import WordCloud
-import matplotlib.colors as mcolors
-import plotly.express as px
 
 DEFAULT_HIGHLIGHT_PROBABILITY_MINIMUM = 0.001
 DEFAULT_NUM_TOPICS = 6
@@ -130,13 +130,13 @@ HASHTAG_REGEX_STR = r'#\S+'
 URL_REGEX_STR = r'((http|https)\:\/\/)?[a-zA-Z0-9\.\/\?\:@\-_=#]+\.([a-zA-Z]){2,6}([a-zA-Z0-9\.\&\/\?\:@\-_=#])*'
 
 
-@st.experimental_memo()
+@st.cache_data()
 def generate_texts_df(selected_dataset: str):
     dataset = DATASETS[selected_dataset]
     return pd.read_csv(f'{dataset["path"]}')
 
 
-@st.experimental_memo()
+@st.cache_data()
 def denoise_docs(texts_df: pd.DataFrame, text_column: str):
     texts = texts_df[text_column].values.tolist()
     remove_regex = regex.compile(f'({EMAIL_REGEX_STR}|{MENTION_REGEX_STR}|{HASHTAG_REGEX_STR}|{URL_REGEX_STR})')
@@ -145,7 +145,7 @@ def denoise_docs(texts_df: pd.DataFrame, text_column: str):
     return docs
 
 
-@st.experimental_memo()
+@st.cache_data()
 def create_bigrams(docs):
     bigram_phrases = gensim.models.Phrases(docs)
     bigram_phraser = gensim.models.phrases.Phraser(bigram_phrases)
@@ -153,7 +153,7 @@ def create_bigrams(docs):
     return docs
 
 
-@st.experimental_memo()
+@st.cache_data()
 def create_trigrams(docs):
     bigram_phrases = gensim.models.Phrases(docs)
     bigram_phraser = gensim.models.phrases.Phraser(bigram_phrases)
@@ -163,7 +163,7 @@ def create_trigrams(docs):
     return docs
 
 
-@st.experimental_memo()
+@st.cache_data()
 def generate_docs(texts_df: pd.DataFrame, text_column: str, ngrams: str = None):
     docs = denoise_docs(texts_df, text_column)
     if ngrams == 'bigrams':
@@ -173,7 +173,7 @@ def generate_docs(texts_df: pd.DataFrame, text_column: str, ngrams: str = None):
     return docs
 
 
-@st.experimental_memo()
+@st.cache_data()
 def generate_wordcloud(docs, collocations: bool = False):
     wordcloud_text = (' '.join(' '.join(doc) for doc in docs))
     wordcloud = WordCloud(font_path=WORDCLOUD_FONT_PATH, width=700, height=600,
@@ -181,14 +181,14 @@ def generate_wordcloud(docs, collocations: bool = False):
     return wordcloud
 
 
-@st.experimental_memo()
+@st.cache_data()
 def prepare_training_data(docs):
     id2word = corpora.Dictionary(docs)
     corpus = [id2word.doc2bow(doc) for doc in docs]
     return id2word, corpus
 
 
-@st.experimental_memo()
+@st.cache_data()
 def train_model(docs, base_model, **kwargs):
     id2word, corpus = prepare_training_data(docs)
     model = base_model(corpus=corpus, id2word=id2word, **kwargs)
@@ -210,7 +210,7 @@ def calculate_coherence(model, corpus, coherence):
     return coherence_model.get_coherence()
 
 
-@st.experimental_memo()
+@st.cache_data()
 def white_or_black_text(background_color):
     # https://stackoverflow.com/questions/3942878/how-to-decide-font-color-in-white-or-black-depending-on-background-color
     red = int(background_color[1:3], 16)
@@ -242,7 +242,7 @@ def coherence_section():
         r'C_{UMass} = \frac{2}{N \cdot (N - 1)}\sum_{i=2}^N\sum_{j=1}^{i-1}\log\frac{P(w_i, w_j) + \epsilon}{P(w_j)}')
 
 
-@st.experimental_memo()
+@st.cache_data()
 def train_projection(projection, n_components, df):
     if projection == 'PCA':
         projection_model = PCA(n_components=n_components)
@@ -250,8 +250,9 @@ def train_projection(projection, n_components, df):
         projection_model = TSNE(n_components=n_components)
     elif projection == 'UMAP':
         projection_model = UMAP(n_components=n_components)
-    data = projection_model.fit_transform(df.drop(columns=['dominant_topic']))
-    return data
+    else:
+        raise ValueError(f'Unknown projection: {projection}')
+    return projection_model.fit_transform(df)
 
 
 if __name__ == '__main__':
@@ -433,7 +434,7 @@ if __name__ == '__main__':
             df = df.assign(dominant_topic=dominant_topic, dominant_topic_percentage=dominant_topic_percentage,
                            text=texts_df[text_column])
             with st.spinner('Training Projection'):
-                projections = train_projection(projection, n_components, df.drop(columns=['text']))
+                projections = train_projection(projection, n_components, df.drop(columns=['dominant_topic', 'dominant_topic_percentage', 'text']).add_prefix('topic_'))
             data = pd.concat([df, pd.DataFrame(projections, columns=columns)], axis=1)
 
             px_options = {'color': 'dominant_topic', 'size': 'dominant_topic_percentage',
